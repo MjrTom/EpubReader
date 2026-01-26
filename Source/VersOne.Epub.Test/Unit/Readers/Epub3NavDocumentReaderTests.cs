@@ -1,4 +1,5 @@
-﻿using VersOne.Epub.Internal;
+﻿using System.Xml;
+using VersOne.Epub.Internal;
 using VersOne.Epub.Options;
 using VersOne.Epub.Schema;
 using VersOne.Epub.Test.Comparers;
@@ -202,19 +203,19 @@ namespace VersOne.Epub.Test.Unit.Readers
                 metadata: new EpubMetadata(),
                 manifest: new EpubManifest
                 (
-                    items: new List<EpubManifestItem>()
-                    {
+                    items:
+                    [
                         new
                         (
                             id: "nav",
                             href: NAV_FILE_NAME,
                             mediaType: "application/xhtml+xml",
-                            properties: new List<EpubManifestProperty>()
-                            {
+                            properties:
+                            [
                                 EpubManifestProperty.NAV
-                            }
+                            ]
                         )
-                    }
+                    ]
                 ),
                 spine: new EpubSpine(),
                 guide: null
@@ -230,8 +231,8 @@ namespace VersOne.Epub.Test.Unit.Readers
             new
             (
                 filePath: NAV_FILE_PATH,
-                navs: new List<Epub3Nav>()
-                {
+                navs:
+                [
                     new
                     (
                         type: Epub3StructuralSemanticsProperty.TOC,
@@ -240,8 +241,8 @@ namespace VersOne.Epub.Test.Unit.Readers
                         ol: new Epub3NavOl
                         (
                             isHidden: false,
-                            lis: new List<Epub3NavLi>()
-                            {
+                            lis:
+                            [
                                 new
                                 (
                                     span: new Epub3NavSpan
@@ -253,11 +254,12 @@ namespace VersOne.Epub.Test.Unit.Readers
                                     childOl: new Epub3NavOl
                                     (
                                         isHidden: false,
-                                        lis: new List<Epub3NavLi>()
-                                        {
+                                        lis:
+                                        [
                                             new
                                             (
-                                                anchor: new Epub3NavAnchor
+                                                anchor:
+                                                new
                                                 (
                                                     href: "chapter1.html",
                                                     title: "Test anchor title",
@@ -265,19 +267,20 @@ namespace VersOne.Epub.Test.Unit.Readers
                                                     text: "Chapter 1"
                                                 )
                                             )
-                                        }
+                                        ]
                                     )
                                 ),
                                 new
                                 (
-                                    anchor: new Epub3NavAnchor
+                                    anchor:
+                                    new
                                     (
                                         type: Epub3StructuralSemanticsProperty.LOI,
                                         href: "illustrations.html",
                                         text: "List of illustrations"
                                     )
                                 )
-                            }
+                            ]
                         )
                     ),
                     new
@@ -288,8 +291,8 @@ namespace VersOne.Epub.Test.Unit.Readers
                         ol: new Epub3NavOl
                         (
                             isHidden: true,
-                            lis: new List<Epub3NavLi>()
-                            {
+                            lis:
+                            [
                                 new
                                 (
                                     anchor: new Epub3NavAnchor
@@ -298,18 +301,18 @@ namespace VersOne.Epub.Test.Unit.Readers
                                         text: "1"
                                     )
                                 )
-                            }
+                            ]
                         )
                     )
-                }
+                ]
             );
 
         private static Epub3NavDocument MinimalEpub3NavDocumentWithHeader =>
             new
             (
                 filePath: NAV_FILE_PATH,
-                navs: new List<Epub3Nav>()
-                {
+                navs:
+                [
                     new
                     (
                         type: Epub3StructuralSemanticsProperty.TOC,
@@ -317,7 +320,7 @@ namespace VersOne.Epub.Test.Unit.Readers
                         head: "Test header",
                         ol: new Epub3NavOl()
                     )
-                }
+                ]
             );
 
         public static IEnumerable<object[]> ReadEpub3NavDocumentAsyncWithMinimalNavFileWithHeaderTestData
@@ -345,6 +348,15 @@ namespace VersOne.Epub.Test.Unit.Readers
             _ = new Epub3NavDocumentReader(null);
         }
 
+        [Fact(DisplayName = "Constructing a Epub3NavDocumentReader instance with a null Epub3NavDocumentReaderOptions property inside the epubReaderOptions parameter should succeed")]
+        public void ConstructorWithNullEpub3NavDocumentReaderOptionsTest()
+        {
+            _ = new Epub3NavDocumentReader(new EpubReaderOptions
+            {
+                Epub3NavDocumentReaderOptions = null!
+            });
+        }
+
         [Fact(DisplayName = "Reading a minimal NAV file should succeed")]
         public async Task ReadEpub3NavDocumentAsyncWithMinimalNavFileTest()
         {
@@ -364,8 +376,8 @@ namespace VersOne.Epub.Test.Unit.Readers
             await TestSuccessfulReadOperation(navFileContent, expectedEpub3NavDocument);
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if EpubPackage is missing the NAV item and EpubVersion is not EPUB_2")]
-        public async Task ReadEpub3NavDocumentAsyncForEpub3WithoutNavManifestItemTest()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if EpubPackage is missing the NAV item and EpubVersion is not EPUB_2 and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncForEpub3WithoutNavManifestItemAndDefaultOptionsTest()
         {
             TestZipFile testZipFile = new();
             EpubPackage epubPackage = new
@@ -375,21 +387,58 @@ namespace VersOne.Epub.Test.Unit.Readers
                 metadata: new EpubMetadata(),
                 manifest: new EpubManifest
                 (
-                    items: new List<EpubManifestItem>()
-                    {
+                    items:
+                    [
                         new
                         (
                             id: "test",
                             href: "test.html",
                             mediaType: "application/xhtml+xml"
                         )
-                    }
+                    ]
                 ),
                 spine: new EpubSpine(),
                 guide: null
             );
             Epub3NavDocumentReader epub3NavDocumentReader = new();
             await Assert.ThrowsAsync<Epub3NavException>(() => epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, epubPackage));
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if EpubPackage is missing the NAV item and EpubVersion is not EPUB_2 and IgnoreMissingNavManifestItemError = true")]
+        public async Task ReadEpub3NavDocumentAsyncForEpub3WithoutNavManifestItemAndIgnoreMissingNavManifestItemErrorTest()
+        {
+            TestZipFile testZipFile = new();
+            EpubPackage epubPackage = new
+            (
+                uniqueIdentifier: null,
+                epubVersion: EpubVersion.EPUB_3,
+                metadata: new EpubMetadata(),
+                manifest: new EpubManifest
+                (
+                    items:
+                    [
+                        new
+                        (
+                            id: "test",
+                            href: "test.html",
+                            mediaType: "application/xhtml+xml"
+                        )
+                    ]
+                ),
+                spine: new EpubSpine(),
+                guide: null
+            );
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreMissingNavManifestItemError = true
+                }
+            };
+            Epub3NavDocumentReader epub3NavDocumentReader = new(epubReaderOptions);
+            Epub3NavDocument? actualEpub3NavDocument =
+                await epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, epubPackage);
+            Assert.Null(actualEpub3NavDocument);
         }
 
         [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if EpubPackage is missing the NAV item and EpubVersion is EPUB_2")]
@@ -406,20 +455,38 @@ namespace VersOne.Epub.Test.Unit.Readers
                 guide: null
             );
             Epub3NavDocumentReader epub3NavDocumentReader = new();
-            Epub3NavDocument? epub3NavDocument = await epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, epubPackage);
-            Assert.Null(epub3NavDocument);
+            Epub3NavDocument? actualEpub3NavDocument =
+                await epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, epubPackage);
+            Assert.Null(actualEpub3NavDocument);
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if EPUB file is missing the NAV file specified in the EpubPackage")]
-        public async Task ReadEpub3NavDocumentAsyncWithoutNavFileTest()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if EPUB file is missing the NAV file specified in the EpubPackage and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutNavFileAndDefaultOptionsTest()
         {
             TestZipFile testZipFile = new();
             Epub3NavDocumentReader epub3NavDocumentReader = new();
             await Assert.ThrowsAsync<Epub3NavException>(() => epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, MinimalEpubPackageWithNav));
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NCX file is larger than 2 GB")]
-        public async Task ReadEpub3NavDocumentAsyncWithLargeNavFileTest()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if EPUB file is missing the NAV file specified in the EpubPackage and IgnoreMissingNavFileError = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutNavFileAndIgnoreMissingNavFileErrorTest()
+        {
+            TestZipFile testZipFile = new();
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreMissingNavFileError = true
+                }
+            };
+            Epub3NavDocumentReader epub3NavDocumentReader = new(epubReaderOptions);
+            Epub3NavDocument? actualEpub3NavDocument =
+                await epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, MinimalEpubPackageWithNav);
+            Assert.Null(actualEpub3NavDocument);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is larger than 2 GB and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithLargeNavFileAndDefaultOptionsTest()
         {
             TestZipFile testZipFile = new();
             testZipFile.AddEntry(NAV_FILE_PATH, new Test4GbZipFileEntry());
@@ -427,28 +494,131 @@ namespace VersOne.Epub.Test.Unit.Readers
             await Assert.ThrowsAsync<Epub3NavException>(() => epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, MinimalEpubPackageWithNav));
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the 'html' XML element")]
-        public async Task ReadEpub3NavDocumentAsyncWithoutHtmlElement()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if the NAV file is larger than 2 GB and IgnoreNavFileIsTooLargeError = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithLargeNavFileAndIgnoreNavFileIsTooLargeErrorTest()
+        {
+            TestZipFile testZipFile = new();
+            testZipFile.AddEntry(NAV_FILE_PATH, new Test4GbZipFileEntry());
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreNavFileIsTooLargeError = true
+                }
+            };
+            Epub3NavDocumentReader epub3NavDocumentReader = new(epubReaderOptions);
+            Epub3NavDocument? actualEpub3NavDocument =
+                await epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, MinimalEpubPackageWithNav);
+            Assert.Null(actualEpub3NavDocument);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException with an inner XmlException if the NAV file is not a valid XHTML file and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithInvalidXhtmlFileAndDefaultOptionsTest()
+        {
+            TestZipFile testZipFile = CreateTestZipFileWithNavFile("not a valid XHTML file");
+            Epub3NavDocumentReader epub3NavDocumentReader = new();
+            Epub3NavException outerException =
+                await Assert.ThrowsAsync<Epub3NavException>(() =>
+                    epub3NavDocumentReader.ReadEpub3NavDocumentAsync(testZipFile, CONTENT_DIRECTORY_PATH, MinimalEpubPackageWithNav));
+            Assert.NotNull(outerException.InnerException);
+            Assert.Equal(typeof(XmlException), outerException.InnerException.GetType());
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if the NAV file is not a valid XHTML file and IgnoreNavFileIsNotValidXmlError = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithInvalidXhtmlFileAndIgnoreNavFileIsNotValidXmlErrorTest()
+        {
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreNavFileIsNotValidXmlError = true
+                }
+            };
+            await TestSuccessfulReadOperation("not a valid XHTML file", null, epubReaderOptions);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the 'html' XML element and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutHtmlElementAndDefaultOptionsTest()
         {
             await TestFailingReadOperation(NAV_FILE_WITHOUT_HTML_ELEMENT);
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the 'body' XML element")]
-        public async Task ReadEpub3NavDocumentAsyncWithoutBodyElement()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if the NAV file is missing the 'html' XML element and IgnoreMissingHtmlElementError = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutHtmlElementAndIgnoreMissingHtmlElementErrorTest()
+        {
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreMissingHtmlElementError = true
+                }
+            };
+            await TestSuccessfulReadOperation(NAV_FILE_WITHOUT_HTML_ELEMENT, null, epubReaderOptions);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the 'body' XML element and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutBodyElementAndDefaultOptionsTest()
         {
             await TestFailingReadOperation(NAV_FILE_WITHOUT_BODY_ELEMENT);
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the top 'ol' XML element")]
-        public async Task ReadEpub3NavDocumentAsyncWithoutTopOlElement()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should return null if the NAV file is missing the 'body' XML element and IgnoreMissingBodyElementError = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutBodyElementAndIgnoreMissingBodyElementErrorTest()
+        {
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    IgnoreMissingBodyElementError = true
+                }
+            };
+            await TestSuccessfulReadOperation(NAV_FILE_WITHOUT_BODY_ELEMENT, null, epubReaderOptions);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file is missing the top 'ol' XML element and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutTopOlElementAndDefaultOptionsTest()
         {
             await TestFailingReadOperation(NAV_FILE_WITHOUT_TOP_OL_ELEMENT);
         }
 
-        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file has an empty 'li' XML element")]
-        public async Task ReadEpub3NavDocumentAsyncWithEmptyLiElement()
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should succeed if the NAV file is missing the top 'ol' XML element and SkipNavsWithMissingOlElements = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithoutTopOlElementAndSkipNavsWithMissingOlElementsTest()
+        {
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    SkipNavsWithMissingOlElements = true
+                }
+            };
+            await TestSuccessfulReadOperation(NAV_FILE_WITHOUT_TOP_OL_ELEMENT, MinimalEpub3NavDocument, epubReaderOptions);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should throw Epub3NavException if the NAV file has an empty 'li' XML element and no Epub3NavDocumentReaderOptions are provided")]
+        public async Task ReadEpub3NavDocumentAsyncWithEmptyLiElementAndDefaultOptionsTest()
         {
             await TestFailingReadOperation(NAV_FILE_WITH_EMPTY_LI_ELEMENT);
+        }
+
+        [Fact(DisplayName = "ReadEpub3NavDocumentAsync should succeed if the NAV file has an empty 'li' XML element and SkipInvalidLiElements = true")]
+        public async Task ReadEpub3NavDocumentAsyncWithEmptyLiElementAndSkipInvalidLiElementsTest()
+        {
+            Epub3NavDocument expectedEpub3NavDocument = MinimalEpub3NavDocument;
+            expectedEpub3NavDocument.Navs.Add(
+                new
+                (
+                    type: Epub3StructuralSemanticsProperty.TOC,
+                    ol: new()
+                )
+            );
+            EpubReaderOptions epubReaderOptions = new()
+            {
+                Epub3NavDocumentReaderOptions = new()
+                {
+                    SkipInvalidLiElements = true
+                }
+            };
+            await TestSuccessfulReadOperation(NAV_FILE_WITH_EMPTY_LI_ELEMENT, expectedEpub3NavDocument, epubReaderOptions);
         }
 
         [Fact(DisplayName = "Reading a NAV file with a URI-escaped 'href' attribute in an 'a' XML element should succeed")]
@@ -457,27 +627,28 @@ namespace VersOne.Epub.Test.Unit.Readers
             Epub3NavDocument expectedEpub3NavDocument = new
             (
                 filePath: NAV_FILE_PATH,
-                navs: new List<Epub3Nav>()
-                {
+                navs:
+                [
                     new
                     (
                         type: Epub3StructuralSemanticsProperty.TOC,
                         ol: new Epub3NavOl
                         (
-                            lis: new List<Epub3NavLi>()
-                            {
+                            lis:
+                            [
                                 new
                                 (
-                                    anchor: new Epub3NavAnchor
+                                    anchor:
+                                    new
                                     (
                                         href: "chapter1.html",
                                         text: "Chapter 1"
                                     )
                                 )
-                            }
+                            ]
                         )
                     )
-                }
+                ]
             );
             await TestSuccessfulReadOperation(NAV_FILE_WITH_ESCAPED_HREF_IN_A_ELEMENT, expectedEpub3NavDocument);
         }
@@ -500,7 +671,7 @@ namespace VersOne.Epub.Test.Unit.Readers
             await TestSuccessfulReadOperation(MINIMAL_NAV_FILE_WITHOUT_TYPE_IN_NAV_ELEMENT, MinimalEpub3NavDocument);
         }
 
-        private static async Task TestSuccessfulReadOperation(string navFileContent, Epub3NavDocument expectedEpub3NavDocument, EpubReaderOptions? epubReaderOptions = null)
+        private static async Task TestSuccessfulReadOperation(string navFileContent, Epub3NavDocument? expectedEpub3NavDocument, EpubReaderOptions? epubReaderOptions = null)
         {
             TestZipFile testZipFile = CreateTestZipFileWithNavFile(navFileContent);
             Epub3NavDocumentReader epub3NavDocumentReader = new(epubReaderOptions ?? new EpubReaderOptions());

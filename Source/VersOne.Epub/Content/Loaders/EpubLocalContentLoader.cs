@@ -49,7 +49,7 @@ namespace VersOne.Epub.Internal
 
         private IZipFileEntry GetContentFileEntry(EpubContentFileRefMetadata contentFileRefMetadata)
         {
-            if (replacementContentFileEntries.TryGetValue(contentFileRefMetadata.Key, out ReplacementContentFileEntry existingReplacementContentFileEntry))
+            if (replacementContentFileEntries.TryGetValue(contentFileRefMetadata.Key, out ReplacementContentFileEntry? existingReplacementContentFileEntry))
             {
                 return existingReplacementContentFileEntry;
             }
@@ -67,11 +67,27 @@ namespace VersOne.Epub.Internal
             }
             if (contentFileEntry == null)
             {
-                throw new EpubContentException($"EPUB parsing error: file \"{contentFilePath}\" was not found in the EPUB file.", contentFilePath);
+                if (contentReaderOptions.IgnoreMissingFileError)
+                {
+                    newReplacementContentFileEntry = new ReplacementContentFileEntry(new MemoryStream());
+                    contentFileEntry = newReplacementContentFileEntry;
+                }
+                else
+                {
+                    throw new EpubContentException($"EPUB parsing error: file \"{contentFilePath}\" was not found in the EPUB file.", contentFilePath);
+                }
             }
             if (contentFileEntry.Length > Int32.MaxValue)
             {
-                throw new EpubContentException($"EPUB parsing error: file \"{contentFilePath}\" is larger than 2 GB.", contentFilePath);
+                if (contentReaderOptions.IgnoreFileIsTooLargeError)
+                {
+                    newReplacementContentFileEntry = new ReplacementContentFileEntry(new MemoryStream());
+                    contentFileEntry = newReplacementContentFileEntry;
+                }
+                else
+                {
+                    throw new EpubContentException($"EPUB parsing error: file \"{contentFilePath}\" is larger than 2 GB.", contentFilePath);
+                }
             }
             if (newReplacementContentFileEntry != null)
             {

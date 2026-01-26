@@ -80,7 +80,8 @@ namespace VersOne.Epub.Internal
                             switch (contentType)
                             {
                                 case EpubContentType.XHTML_1_1:
-                                    if (manifestItem.Properties != null && manifestItem.Properties.Contains(EpubManifestProperty.NAV))
+                                    if (manifestItem.Properties != null && manifestItem.Properties.Contains(EpubManifestProperty.NAV) &&
+                                        !epubReaderOptions.ContentReaderOptions.IgnoreRemoteEpub3NavigationFileError)
                                     {
                                         throw new EpubPackageException($"Incorrect EPUB manifest: EPUB 3 navigation document \"{href}\" cannot be a remote resource.");
                                     }
@@ -155,12 +156,18 @@ namespace VersOne.Epub.Internal
                         break;
                 }
             }
-            EpubContentCollectionRef<EpubLocalTextContentFileRef, EpubRemoteTextContentFileRef> html = new(htmlLocal.AsReadOnly(), htmlRemote.AsReadOnly());
-            EpubContentCollectionRef<EpubLocalTextContentFileRef, EpubRemoteTextContentFileRef> css = new(cssLocal.AsReadOnly(), cssRemote.AsReadOnly());
-            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> images = new(imagesLocal.AsReadOnly(), imagesRemote.AsReadOnly());
-            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> fonts = new(fontsLocal.AsReadOnly(), fontsRemote.AsReadOnly());
-            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> audio = new(audioLocal.AsReadOnly(), audioRemote.AsReadOnly());
-            EpubContentCollectionRef<EpubLocalContentFileRef, EpubRemoteContentFileRef> allFiles = new(allFilesLocal.AsReadOnly(), allFilesRemote.AsReadOnly());
+            EpubContentCollectionRef<EpubLocalTextContentFileRef, EpubRemoteTextContentFileRef> html =
+                new(htmlLocal.AsReadOnly(), htmlRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
+            EpubContentCollectionRef<EpubLocalTextContentFileRef, EpubRemoteTextContentFileRef> css =
+                new(cssLocal.AsReadOnly(), cssRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
+            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> images =
+                new(imagesLocal.AsReadOnly(), imagesRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
+            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> fonts =
+                new(fontsLocal.AsReadOnly(), fontsRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
+            EpubContentCollectionRef<EpubLocalByteContentFileRef, EpubRemoteByteContentFileRef> audio =
+                new(audioLocal.AsReadOnly(), audioRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
+            EpubContentCollectionRef<EpubLocalContentFileRef, EpubRemoteContentFileRef> allFiles =
+                new(allFilesLocal.AsReadOnly(), allFilesRemote.AsReadOnly(), epubReaderOptions.ContentReaderOptions);
             cover = BookCoverReader.ReadBookCover(epubSchema, images, epubReaderOptions.BookCoverReaderOptions);
             return new(cover, navigationHtmlFile, html, css, images, fonts, audio, allFiles);
         }

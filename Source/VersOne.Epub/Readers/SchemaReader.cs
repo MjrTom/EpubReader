@@ -15,13 +15,21 @@ namespace VersOne.Epub.Internal
             this.epubReaderOptions = epubReaderOptions ?? new EpubReaderOptions();
         }
 
-        public async Task<EpubSchema> ReadSchemaAsync(IZipFile epubFile)
+        public async Task<EpubSchema?> ReadSchemaAsync(IZipFile epubFile)
         {
-            RootFilePathReader rootFilePathReader = new(epubReaderOptions);
-            string rootFilePath = await rootFilePathReader.GetRootFilePathAsync(epubFile).ConfigureAwait(false);
-            string contentDirectoryPath = ContentPathUtils.GetDirectoryPath(rootFilePath);
+            ContainerFileReader containerFileReader = new(epubReaderOptions);
+            string? packageFilePath = await containerFileReader.GetPackageFilePathAsync(epubFile).ConfigureAwait(false);
+            if (packageFilePath == null)
+            {
+                return null;
+            }
+            string contentDirectoryPath = ContentPathUtils.GetDirectoryPath(packageFilePath);
             PackageReader packageReader = new(epubReaderOptions);
-            EpubPackage package = await packageReader.ReadPackageAsync(epubFile, rootFilePath).ConfigureAwait(false);
+            EpubPackage? package = await packageReader.ReadPackageAsync(epubFile, packageFilePath).ConfigureAwait(false);
+            if (package == null)
+            {
+                return null;
+            }
             Epub2NcxReader epub2NcxReader = new(epubReaderOptions);
             Epub2Ncx? epub2Ncx = await epub2NcxReader.ReadEpub2NcxAsync(epubFile, contentDirectoryPath, package).ConfigureAwait(false);
             Epub3NavDocumentReader epub3NavDocumentReader = new(epubReaderOptions);

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using VersOne.Epub.Options;
 
 namespace VersOne.Epub
 {
@@ -22,34 +23,59 @@ namespace VersOne.Epub
         /// </summary>
         /// <param name="local">Local content files to be stored within this container.</param>
         /// <param name="remote">Remote content files to be stored within this container.</param>
-        public EpubContentCollection(ReadOnlyCollection<TLocalContentFile>? local = null, ReadOnlyCollection<TRemoteContentFile>? remote = null)
+        /// <param name="contentReaderOptions">Options to configure the error handling behavior of the content reader.</param>
+        public EpubContentCollection(ReadOnlyCollection<TLocalContentFile>? local = null, ReadOnlyCollection<TRemoteContentFile>? remote = null,
+            ContentReaderOptions? contentReaderOptions = null)
         {
-            Local = local ?? new ReadOnlyCollection<TLocalContentFile>(new List<TLocalContentFile>());
-            Remote = remote ?? new ReadOnlyCollection<TRemoteContentFile>(new List<TRemoteContentFile>());
+            contentReaderOptions ??= new ContentReaderOptions();
+            List<TLocalContentFile> localList = new();
+            List<TRemoteContentFile> remoteList = new();
             localByKey = new Dictionary<string, TLocalContentFile>();
             localByFilePath = new Dictionary<string, TLocalContentFile>();
-            foreach (TLocalContentFile localContentFile in Local)
+            if (local != null)
             {
-                if (localByKey.ContainsKey(localContentFile.Key))
+                foreach (TLocalContentFile localContentFile in local)
                 {
-                    throw new EpubPackageException($"Incorrect EPUB manifest: item with href = \"{localContentFile.Key}\" is not unique.");
+                    if (localByKey.ContainsKey(localContentFile.Key))
+                    {
+                        if (contentReaderOptions.SkipItemsWithDuplicateHrefs)
+                        {
+                            continue;
+                        }
+                        throw new EpubPackageException($"Incorrect EPUB manifest: item with href = \"{localContentFile.Key}\" is not unique.");
+                    }
+                    if (localByFilePath.ContainsKey(localContentFile.FilePath))
+                    {
+                        if (contentReaderOptions.SkipItemsWithDuplicateFilePaths)
+                        {
+                            continue;
+                        }
+                        throw new EpubPackageException($"Incorrect EPUB manifest: item with absolute file path = \"{localContentFile.FilePath}\" is not unique.");
+                    }
+                    localList.Add(localContentFile);
+                    localByKey.Add(localContentFile.Key, localContentFile);
+                    localByFilePath.Add(localContentFile.FilePath, localContentFile);
                 }
-                localByKey.Add(localContentFile.Key, localContentFile);
-                if (localByFilePath.ContainsKey(localContentFile.FilePath))
-                {
-                    throw new EpubPackageException($"Incorrect EPUB manifest: item with absolute file path = \"{localContentFile.FilePath}\" is not unique.");
-                }
-                localByFilePath.Add(localContentFile.FilePath, localContentFile);
             }
+            Local = localList.AsReadOnly();
             remoteByUrl = new Dictionary<string, TRemoteContentFile>();
-            foreach (TRemoteContentFile remoteContentFile in Remote)
+            if (remote != null)
             {
-                if (remoteByUrl.ContainsKey(remoteContentFile.Url))
+                foreach (TRemoteContentFile remoteContentFile in remote)
                 {
-                    throw new EpubPackageException($"Incorrect EPUB manifest: item with href = \"{remoteContentFile.Url}\" is not unique.");
+                    if (remoteByUrl.ContainsKey(remoteContentFile.Url))
+                    {
+                        if (contentReaderOptions.SkipItemsWithDuplicateUrls)
+                        {
+                            continue;
+                        }
+                        throw new EpubPackageException($"Incorrect EPUB manifest: item with href = \"{remoteContentFile.Url}\" is not unique.");
+                    }
+                    remoteList.Add(remoteContentFile);
+                    remoteByUrl.Add(remoteContentFile.Url, remoteContentFile);
                 }
-                remoteByUrl.Add(remoteContentFile.Url, remoteContentFile);
             }
+            Remote = remoteList.AsReadOnly();
         }
 
         /// <summary>
@@ -115,7 +141,7 @@ namespace VersOne.Epub
         /// <c>true</c> if the local content file with the specified <see cref="EpubContentFile.Key" /> value exists in this container; otherwise, <c>false</c>.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="key" /> is <c>null</c>.</exception>
-        public bool TryGetLocalFileByKey(string key, out TLocalContentFile localContentFile)
+        public bool TryGetLocalFileByKey(string key, out TLocalContentFile? localContentFile)
         {
             if (key == null)
             {
@@ -177,7 +203,7 @@ namespace VersOne.Epub
         /// <c>true</c> if the local content file with the specified <see cref="EpubLocalContentFile.FilePath" /> value exists in this container; otherwise, <c>false</c>.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="filePath" /> is <c>null</c>.</exception>
-        public bool TryGetLocalFileByFilePath(string filePath, out TLocalContentFile localContentFile)
+        public bool TryGetLocalFileByFilePath(string filePath, out TLocalContentFile? localContentFile)
         {
             if (filePath == null)
             {
@@ -239,7 +265,7 @@ namespace VersOne.Epub
         /// <c>true</c> if the remote content file with the specified <see cref="EpubRemoteContentFile.Url" /> value exists in this container; otherwise, <c>false</c>.
         /// </returns>
         /// <exception cref="ArgumentNullException"><paramref name="url" /> is <c>null</c>.</exception>
-        public bool TryGetRemoteFileByUrl(string url, out TRemoteContentFile remoteContentFile)
+        public bool TryGetRemoteFileByUrl(string url, out TRemoteContentFile? remoteContentFile)
         {
             if (url == null)
             {
