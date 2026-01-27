@@ -2,7 +2,7 @@
     <PropertyGroup>
         <TargetFrameworks>net46;netstandard1.3;netstandard2.0</TargetFrameworks>
         <Authors>vers</Authors>
-        <Copyright>vers, 2015-2024</Copyright>
+        <Copyright>vers, 2015-2026</Copyright>
         <Version>3.3.5</Version>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>

@@ -3,7 +3,7 @@
 		<OutputType>Exe</OutputType>
 		<TargetFramework>net10.0</TargetFramework>
 		<Authors>vers</Authors>
-		<Copyright>vers, 2015-2024</Copyright>
+		<Copyright>vers, 2015-2026</Copyright>
 		<Version>3.3.5</Version>
 		<EnforceCodeStyleInBuild>True</EnforceCodeStyleInBuild>
 		<DocumentationFile></DocumentationFile>
