@@ -4,7 +4,7 @@ on: workflow_dispatch
 
 jobs:
   publish-to-nuget:
-    runs-on: windows-2022
+    runs-on: windows-2025
     env:
       Configuration: Release
       Solution_Name: Source\EpubReader.sln
